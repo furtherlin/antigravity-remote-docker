@@ -3,6 +3,23 @@
 # A GPU-accelerated container for running Google Antigravity remotely via noVNC
 # =============================================================================
 
+# =============================================================================
+# Using vittico's tool to build the deb file
+# Reference: https://github.com/vittico/packaged-gravity
+# =============================================================================
+
+FROM ubuntu:jammy-20260627 as builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends dpkg tar python3 git wget ca-certificates
+
+RUN git clone https://github.com/vittico/packaged-gravity.git && \
+    cd packaged-gravity && \
+#    wget https://storage.googleapis.com/antigravity-public/antigravity-hub/2.3.1-5358163105546240/linux-x64/Antigravity.tar.gz && \
+    wget https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/2.1.1-6123990880747520/linux-x64/Antigravity%20IDE.tar.gz && \
+    sed -s 's/detect_arch\ \"$optdir\/$AG_EXEC\"/AG_ARCH_RPM=x86_64;AG_ARCH_DEB=amd64;AG_ARCH_APPIMAGE=x86_64;/g' -i lib/stage.sh && \
+    ./build.sh "Antigravity IDE.tar.gz"
+     #./build.sh "Antigravity.tar.gz"  --format deb
+
 FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04
 
 LABEL maintainer="raphl"
@@ -33,6 +50,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # =============================================================================
 # System Dependencies
 # =============================================================================
+ARG NOVNC_VERSION=1.7.0
+ARG WEBSOCKIFY=0.13.0
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Core utilities
     ca-certificates \
@@ -105,7 +125,7 @@ ENV LANG=en_US.UTF-8 \
 # Install noVNC and websockify
 # =============================================================================
 RUN mkdir -p /opt/novnc \
-    && curl -fsSL https://github.com/novnc/noVNC/archive/refs/tags/v1.4.0.tar.gz | tar -xz -C /opt/novnc --strip-components=1 \
+    && curl -fsSL https://github.com/novnc/noVNC/archive/refs/tags/v${NOVNC_VERSION}.tar.gz | tar -xz -C /opt/novnc --strip-components=1 \
     && mkdir -p /opt/websockify \
     && curl -fsSL https://github.com/novnc/websockify/archive/refs/tags/v0.11.0.tar.gz | tar -xz -C /opt/websockify --strip-components=1 \
     && ln -sf /opt/websockify /opt/novnc/utils/websockify
@@ -114,16 +134,13 @@ RUN mkdir -p /opt/novnc \
 RUN echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=vnc.html?autoconnect=true&resize=remote&lang=en"></head><body>Redirecting...</body></html>' > /opt/novnc/index.html
 
 # =============================================================================
-# Add Antigravity Repository and Install
+# Install Antigravity
 # =============================================================================
-RUN mkdir -p /etc/apt/keyrings \
-    && curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
-    gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg \
-    && echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" | \
-    tee /etc/apt/sources.list.d/antigravity.list > /dev/null \
-    && apt-get update \
-    && apt-get install -y antigravity \
-    && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /packaged-gravity/dist/antigravity_*.deb /antigravity.deb
+
+RUN apt-get install -y ./antigravity.deb && \
+    rm antigravity.deb
+
 
 # =============================================================================
 # Create Non-Root User
