@@ -11,12 +11,13 @@
 FROM ubuntu:jammy-20260627 as builder
 
 ARG ANTIGRAVITY_VERSION=2.3.1-5358163105546240
+ARG ANTIGRAVITY_IDE_VERSION=2.1.1-6123990880747520
 RUN apt-get update && apt-get install -y --no-install-recommends file tar python3 git wget ca-certificates imagemagick
 
 RUN git clone https://github.com/vittico/packaged-gravity.git && \
     cd packaged-gravity && \
 #    wget https://storage.googleapis.com/antigravity-public/antigravity-hub/${ANTIGRAVITY_VERSION}/linux-x64/Antigravity.tar.gz && \
-    wget https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/${ANTIGRAVITY_VERSION}/linux-x64/Antigravity%20IDE.tar.gz && \
+    wget https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/${ANTIGRAVITY_IDE_VERSION}/linux-x64/Antigravity%20IDE.tar.gz && \
 #    sed -s 's/detect_arch\ \"$optdir\/$AG_EXEC\"/AG_ARCH_RPM=x86_64;AG_ARCH_DEB=amd64;AG_ARCH_APPIMAGE=x86_64;/g' -i lib/stage.sh && \
     ./build.sh "Antigravity IDE.tar.gz" --format deb
      #./build.sh "Antigravity.tar.gz"  --format deb
