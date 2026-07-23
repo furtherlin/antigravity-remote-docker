@@ -22,6 +22,7 @@ RUN git clone https://github.com/vittico/packaged-gravity.git && \
     ./build.sh "Antigravity IDE.tar.gz" --format deb
      #./build.sh "Antigravity.tar.gz"  --format deb
 
+
 FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04
 
 LABEL maintainer="raphl"
@@ -104,6 +105,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Window management (for auto-maximize)
     wmctrl \
     xdotool \
+    libsecret-1-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # =============================================================================
@@ -138,10 +140,14 @@ RUN echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=v
 # =============================================================================
 # Install Antigravity
 # =============================================================================
-COPY --from=builder /packaged-gravity/dist/antigravity_*.deb /antigravity.deb
+COPY --from=builder /packaged-gravity/dist/antigravity*.deb /opt/antigravity.deb
 
-RUN apt-get install -y ./antigravity.deb && \
-    rm antigravity.deb
+RUN dpkg -i /opt/antigravity.deb && \
+    apt-get update && \
+    apt-get install -f && \
+    rm /opt/antigravity.deb && \
+    rm -rf /var/lib/apt/lists/*
+
 
 
 # =============================================================================
