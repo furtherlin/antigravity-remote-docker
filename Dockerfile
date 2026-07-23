@@ -106,6 +106,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wmctrl \
     xdotool \
     libsecret-1-0 \
+    fonts-noto-cjk \
+    fonts-noto-cjk-extra \
+    fcitx5 \
+    fcitx5-chinese-addons \
+    fcitx5-chewing \
     && rm -rf /var/lib/apt/lists/*
 
 # =============================================================================
@@ -121,6 +126,8 @@ RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor
 # Locale Configuration
 # =============================================================================
 RUN locale-gen en_US.UTF-8
+RUN locale-gen zh_TW.UTF-8
+
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
@@ -131,7 +138,7 @@ ENV LANG=en_US.UTF-8 \
 RUN mkdir -p /opt/novnc \
     && curl -fsSL https://github.com/novnc/noVNC/archive/refs/tags/v${NOVNC_VERSION}.tar.gz | tar -xz -C /opt/novnc --strip-components=1 \
     && mkdir -p /opt/websockify \
-    && curl -fsSL https://github.com/novnc/websockify/archive/refs/tags/v0.11.0.tar.gz | tar -xz -C /opt/websockify --strip-components=1 \
+    && curl -fsSL https://github.com/novnc/websockify/archive/refs/tags/v${WEBSOCKIFY}.tar.gz | tar -xz -C /opt/websockify --strip-components=1 \
     && ln -sf /opt/websockify /opt/novnc/utils/websockify
 
 # Create custom index.html that forces English language and auto-connects
@@ -147,8 +154,6 @@ RUN dpkg -i /opt/antigravity.deb && \
     apt-get install -f && \
     rm /opt/antigravity.deb && \
     rm -rf /var/lib/apt/lists/*
-
-
 
 # =============================================================================
 # Create Non-Root User
@@ -170,13 +175,6 @@ RUN mkdir -p /home/${USER}/.vnc /home/${USER}/.config \
 COPY --chown=${USER}:${USER} config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY --chown=${USER}:${USER} scripts/ /opt/scripts/
 RUN chmod +x /opt/scripts/*.sh
-
-# =============================================================================
-# Configure Auto-Updates for Antigravity
-# =============================================================================
-RUN echo 'APT::Periodic::Update-Package-Lists "1";' > /etc/apt/apt.conf.d/20auto-upgrades \
-    && echo 'APT::Periodic::Unattended-Upgrade "1";' >> /etc/apt/apt.conf.d/20auto-upgrades \
-    && echo 'Unattended-Upgrade::Allowed-Origins { "antigravity-auto-updater-dev:antigravity-debian"; };' > /etc/apt/apt.conf.d/50unattended-upgrades
 
 # =============================================================================
 # Exposed Ports
