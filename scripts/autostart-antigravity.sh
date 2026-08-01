@@ -10,7 +10,7 @@ sleep 3
 
 # Launch Antigravity maximized using wmctrl or xdotool
 # First, start Antigravity
-antigravity &
+antigravity-ide &
 
 # Wait for window to appear
 sleep 2
