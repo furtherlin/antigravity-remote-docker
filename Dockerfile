@@ -128,10 +128,13 @@ RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor
 RUN locale-gen en_US.UTF-8
 RUN locale-gen zh_TW.UTF-8
 
-ENV LANG=en_US.UTF-8 \
-    LANGUAGE=en_US:en \
-    LC_ALL=en_US.UTF-8
-
+ENV LANG=zh_TW.UTF-8 \
+    LANGUAGE=zh_TW:zh \
+    LC_ALL=zh_TW.UTF-8 \
+    GTK_IM_MODULE=fcitx5 \
+    QT_IM_MODULE=fcitx5 \
+    XMODIFIERS=@im=fcitx5 \
+    SDL_IM_MODULE=fcitx5
 # =============================================================================
 # Install noVNC and websockify
 # =============================================================================
@@ -166,7 +169,7 @@ RUN groupadd -g ${GID} ${USER} \
 # =============================================================================
 # Configure VNC and Desktop
 # =============================================================================
-RUN mkdir -p /home/${USER}/.vnc /home/${USER}/.config \
+RUN mkdir -p /home/${USER}/.vnc /home/${USER}/.config /home/${USER}/.config/autostart \
     && chown -R ${USER}:${USER} /home/${USER}
 
 # =============================================================================
@@ -175,6 +178,8 @@ RUN mkdir -p /home/${USER}/.vnc /home/${USER}/.config \
 COPY --chown=${USER}:${USER} config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY --chown=${USER}:${USER} scripts/ /opt/scripts/
 RUN chmod +x /opt/scripts/*.sh
+
+RUN cp /usr/share/applications/org.fcitx.Fcitx5.desktop ~/.config/autostart/
 
 # =============================================================================
 # Exposed Ports
