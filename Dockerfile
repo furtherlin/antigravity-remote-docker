@@ -175,11 +175,8 @@ COPY --chown=${USER}:${USER} config/supervisord.conf /etc/supervisor/conf.d/supe
 COPY --chown=${USER}:${USER} scripts/ /opt/scripts/
 RUN chmod +x /opt/scripts/*.sh
 
-<<<<<<< HEAD
 RUN cp /usr/share/applications/org.fcitx.Fcitx5.desktop ~/.config/autostart/
 
-=======
->>>>>>> 6fcf674 (add build.sh for selection version and build docker contianer)
 # =============================================================================
 # Exposed Ports
 # =============================================================================
