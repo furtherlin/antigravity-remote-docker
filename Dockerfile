@@ -14,7 +14,7 @@ ARG ANTIGRAVITY_VERSION=2.3.1-5358163105546240
 ARG ANTIGRAVITY_IDE_VERSION=2.1.1-6123990880747520
 RUN apt-get update && apt-get install -y --no-install-recommends file tar python3 git wget ca-certificates imagemagick
 
-FROM builder as builder-antigravity
+FROM builder as build-deb-antigravity
 
 RUN git clone https://github.com/vittico/packaged-gravity.git && \
     cd packaged-gravity && \
@@ -22,7 +22,7 @@ RUN git clone https://github.com/vittico/packaged-gravity.git && \
     sed -s 's/detect_arch\ \"$optdir\/$AG_EXEC\"/AG_ARCH_RPM=x86_64;AG_ARCH_DEB=amd64;AG_ARCH_APPIMAGE=x86_64;/g' -i lib/stage.sh && \
     ./build.sh "Antigravity.tar.gz" --format deb
 
-FROM builder as builder-antigravity-ide
+FROM builder as build-deb-antigravity-ide
 
 RUN git clone https://github.com/vittico/packaged-gravity.git && \
     cd packaged-gravity && \
@@ -30,7 +30,7 @@ RUN git clone https://github.com/vittico/packaged-gravity.git && \
     ./build.sh "Antigravity IDE.tar.gz" --format deb
 
 
-FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04
+FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04 as builder-base
 
 LABEL maintainer="raphl"
 LABEL description="Google Antigravity with noVNC remote access and GPU support"
@@ -155,17 +155,6 @@ RUN mkdir -p /opt/novnc \
 RUN echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=vnc.html?autoconnect=true&resize=remote&lang=en"></head><body>Redirecting...</body></html>' > /opt/novnc/index.html
 
 # =============================================================================
-# Install Antigravity
-# =============================================================================
-COPY --from=builder /packaged-gravity/dist/antigravity*.deb /opt/antigravity.deb
-
-RUN dpkg -i /opt/antigravity.deb && \
-    apt-get update && \
-    apt-get install -f && \
-    rm /opt/antigravity.deb && \
-    rm -rf /var/lib/apt/lists/*
-
-# =============================================================================
 # Create Non-Root User
 # =============================================================================
 RUN groupadd -g ${GID} ${USER} \
@@ -186,8 +175,11 @@ COPY --chown=${USER}:${USER} config/supervisord.conf /etc/supervisor/conf.d/supe
 COPY --chown=${USER}:${USER} scripts/ /opt/scripts/
 RUN chmod +x /opt/scripts/*.sh
 
+<<<<<<< HEAD
 RUN cp /usr/share/applications/org.fcitx.Fcitx5.desktop ~/.config/autostart/
 
+=======
+>>>>>>> 6fcf674 (add build.sh for selection version and build docker contianer)
 # =============================================================================
 # Exposed Ports
 # =============================================================================
@@ -219,3 +211,21 @@ WORKDIR /home/${USER}
 
 ENTRYPOINT ["/opt/scripts/entrypoint.sh"]
 CMD ["supervisord"]
+
+# =============================================================================
+# Install Antigravity
+# =============================================================================
+
+# Target 1: Standard Antigravity Runtime
+FROM builder-base as builder-antigravity
+USER root
+COPY --from=build-deb-antigravity /packaged-gravity/dist/antigravity*.deb /opt/antigravity.deb
+RUN dpkg -i /opt/antigravity.deb && apt-get update && apt-get install -f && rm /opt/antigravity.deb && rm -rf /var/lib/apt/lists/*
+USER ${USER}
+
+# Target 2: Antigravity IDE Runtime
+FROM builder-base as builder-antigravity-ide
+USER root
+COPY --from=build-deb-antigravity-ide /packaged-gravity/dist/antigravity*.deb /opt/antigravity.deb
+RUN dpkg -i /opt/antigravity.deb && apt-get update && apt-get install -f && rm /opt/antigravity.deb && rm -rf /var/lib/apt/lists/*
+USER ${USER}
