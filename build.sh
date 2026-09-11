@@ -92,7 +92,7 @@ antigravity_select_and_download_release() {
             # Convert 1-based menu choice ($REPLY) to 0-based array index
             local idx=$(( REPLY - 1 ))
 
-            local version="${versions[$idx]}"
+            version="${versions[$idx]}"
             local exec_id="${exec_ids[$idx]}"
             local download_url="${Base_Url}/${version}-${exec_id}"
 
@@ -117,12 +117,14 @@ select opt in "${options[@]}"; do
             echo "Start Building Antigravity ..."
             antigravity_select_and_download_release "${options[0]}" "$Antigravity_Base_Url" "releases"
             docker build --build-arg ANTIGRAVITY_VERSION=${full_version} --target builder-antigravity -t antigravity-remote:latest .
+            docker tag antigravity-remote:latest antigravity-remote:antigravity-${version}
             exit 0
             ;;
         "${options[1]}")
             echo "Start Building Antigravity IDE ..."
             antigravity_select_and_download_release "${options[1]}" "$Antigravity_IDE_Base_Url" "releases"
             docker build --build-arg ANTIGRAVITY_IDE_VERSION=${full_version} --target builder-antigravity-ide -t antigravity-remote:latest .
+            docker tag antigravity-remote:latest antigravity-remote:antigravity-cli-${version}
             exit 0
             ;;
         "${options[2]}")
